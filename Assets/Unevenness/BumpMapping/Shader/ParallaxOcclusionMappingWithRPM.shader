@@ -141,12 +141,14 @@ Shader "Unlit/ParallaxlOcclusionMappingWithRPM"
 
                 const int reliefStepCount = 32;
                 float2 uvPOMEnd = uv;
+                float2 uvOffset2 = float2(0,0);
                 for (int reliefStep = 0; reliefStep < reliefStepCount; reliefStep++)
                 {
                     // rayの長さを半分にする
                     rayStepLength /= 2;
+                    uvOffset2 = - i.viewDirTS * reliefStep * rayStepLength * _HeightFactor;
                     // 今度は逆に進める
-                    uv = uvPOMEnd - i.viewDirTS * reliefStep * rayStepLength * _HeightFactor;
+                    uv = uvPOMEnd + uvOffset2;
                     height = SAMPLE_TEXTURE2D(_HeightMap, sampler_HeightMap, uv).r;
 
                     // 今回はrayを逆に進めているのでheightmapより超えたらbreak
@@ -157,6 +159,10 @@ Shader "Unlit/ParallaxlOcclusionMappingWithRPM"
 
                     rayHeight += rayStepLength;
                 }
+
+                float weight = 0.5;
+                float2 beforeUV = uv + uvOffset2;
+                uv = lerp(uv, beforeUV, weight);
                 
                 float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
                 float3 normal = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv));
